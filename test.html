@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FTG VPTA Analysis</title>
+</head>
+<body>
+    <h1>Upload Photo for FTG VPTA Analysis</h1>
+    <form id="uploadForm">
+        <input type="file" id="imageInput" accept="image/*"><br><br>
+        <button type="button" onclick="uploadImage()">Upload and Analyze</button>
+    </form>
+    <h2>Analysis Result</h2>
+    <pre id="result"></pre>
+
+    <script>
+        async function uploadImage() {
+            const input = document.getElementById("imageInput");
+            if (!input.files[0]) {
+                alert("Please select an image first.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", input.files[0]);
+
+            // Upload to Google Cloud Storage
+            const uploadResponse = await fetch("https://storage.googleapis.com/upload/storage/v1/b/thunkable-ftg-images/o?uploadType=media&name=" + input.files[0].name, {
+                method: "POST",
+                body: input.files[0],
+                headers: {
+                    "Content-Type": input.files[0].type
+                }
+            });
+
+            if (!uploadResponse.ok) {
+                alert("Failed to upload image.");
+                return;
+            }
+
+            const uploadedImageURL = `https://storage.googleapis.com/thunkable-ftg-images/${input.files[0].name}`;
+
+            // Call the Cloud Function
+            const analysisResponse = await fetch("https://us-central1-ftg-navigator-2.cloudfunctions.net/analyzeImage", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image_url: uploadedImageURL })
+            });
+
+            const result = await analysisResponse.json();
+            document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+        }
+    </script>
+</body>
+</html>
