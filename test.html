@@ -13,12 +13,12 @@
     <pre id="result"></pre>
 
     <script>
+        // Declare API key at the global scope
+        const API_KEY = "AIzaSyBtxIGxGpcsfc9ZA2dcx8Gow0PiSZUYQbk";
+
         async function uploadImage() {
             const input = document.getElementById("imageInput");
             const resultDisplay = document.getElementById("result");
-
-            // Replace with your API key
-            const API_KEY = AIzaSyBtxIGxGpcsfc9ZA2dcx8Gow0PiSZUYQbk;
 
             // Clear previous results
             resultDisplay.textContent = "";
@@ -31,19 +31,24 @@
             const file = input.files[0];
             const fileName = encodeURIComponent(file.name); // Ensure the name is URL-safe
 
-            // Upload the image to Google Cloud Storage
             try {
+                // Debug: Log the API Key and file details
+                console.log("API Key:", API_KEY);
+                console.log("Uploading image...");
+
+                // Upload the image to Google Cloud Storage
                 const uploadResponse = await fetch(`https://storage.googleapis.com/upload/storage/v1/b/thunkable-ftg-images/o?uploadType=media&name=${fileName}`, {
                     method: "POST",
                     body: file,
                     headers: {
                         "Content-Type": file.type,
-                        "Authorization": `Bearer ${API_KEY}` // Use Authorization key
+                        "Authorization": `Bearer ${API_KEY}`
                     }
                 });
 
                 if (!uploadResponse.ok) {
                     const errorDetails = await uploadResponse.text();
+                    console.error("Upload failed:", uploadResponse.status, errorDetails);
                     alert(`Failed to upload image. Error: ${uploadResponse.status} - ${errorDetails}`);
                     return;
                 }
@@ -52,17 +57,19 @@
                 console.log("Image successfully uploaded:", uploadedImageURL);
 
                 // Call the Cloud Function to analyze the image
+                console.log("Calling Cloud Function...");
                 const analysisResponse = await fetch("https://us-central1-ftg-navigator-2.cloudfunctions.net/analyzeImage", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${API_KEY}` // Use Authorization key
+                        "Authorization": `Bearer ${API_KEY}`
                     },
                     body: JSON.stringify({ image_url: uploadedImageURL })
                 });
 
                 if (!analysisResponse.ok) {
                     const errorDetails = await analysisResponse.text();
+                    console.error("Cloud Function call failed:", analysisResponse.status, errorDetails);
                     alert(`Failed to analyze image. Error: ${analysisResponse.status} - ${errorDetails}`);
                     return;
                 }
@@ -72,8 +79,8 @@
                 console.log("Analysis result:", result);
 
             } catch (error) {
+                console.error("Unexpected error:", error);
                 alert(`An unexpected error occurred: ${error.message}`);
-                console.error(error);
             }
         }
     </script>
